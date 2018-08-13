@@ -11,7 +11,7 @@ use Gloudemans\Shoppingcart\Contracts\Buyable;
 use Gloudemans\Shoppingcart\Exceptions\UnknownModelException;
 use Gloudemans\Shoppingcart\Exceptions\InvalidRowIDException;
 use Gloudemans\Shoppingcart\Exceptions\CartAlreadyStoredException;
-use App\Models\ShopSettings;
+use Gloudemans\Shoppingcart\ShopSettings;
 class Cart
 {
     const DEFAULT_INSTANCE = 'default';
