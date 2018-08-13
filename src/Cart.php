@@ -11,7 +11,7 @@ use Gloudemans\Shoppingcart\Contracts\Buyable;
 use Gloudemans\Shoppingcart\Exceptions\UnknownModelException;
 use Gloudemans\Shoppingcart\Exceptions\InvalidRowIDException;
 use Gloudemans\Shoppingcart\Exceptions\CartAlreadyStoredException;
-
+use App\Models\ShopSettings;
 class Cart
 {
     const DEFAULT_INSTANCE = 'default';
@@ -37,17 +37,18 @@ class Cart
      */
     private $instance;
 
+    private $locn;
+
     /**
      * Cart constructor.
      *
      * @param \Illuminate\Session\SessionManager      $session
      * @param \Illuminate\Contracts\Events\Dispatcher $events
      */
-    public function __construct(SessionManager $session, Dispatcher $events)
+    public function __construct( SessionManager $session, Dispatcher $events )
     {
         $this->session = $session;
         $this->events = $events;
-
         $this->instance(self::DEFAULT_INSTANCE);
     }
 
@@ -74,6 +75,65 @@ class Cart
     public function currentInstance()
     {
         return str_replace('cart.', '', $this->instance);
+    }
+
+     /**
+     * Set the locn.
+     *
+     * @param int|float $locn
+     */
+    public function setLocn($locn)
+    {
+        $this->session->put('location',$locn);
+    }
+    /**
+     * Get the current cart locn.
+     *
+     * @return string
+     */
+    public function getLocn()
+    {
+        $locn = $this->session->get('location') ?: 'uk'; 
+        return $locn;
+    }
+
+    /**
+     * Get the max shipping rate for a given location.
+     *
+     * @return string
+     */
+    private function getMaxShipping()
+    {
+        $settings = ShopSettings::find(1);
+        $max = $this->getLocn() == 'uk' ? $settings->uk_shipping : $settings->os_shipping;
+        return $max;
+    }
+
+
+    /**
+     * Get the per-item shipping rate for a given location. For now it's the same as max, but could be less
+     * If it's less, the cart adds them up until the total hits max
+     * per-item shipping could therefore be set as a global figure in settings table or as a true per-item in product table
+     *
+     * @return string
+     */
+    private function getItemShipping()
+    {
+        $settings = ShopSettings::find(1);
+        $rate = $this->getLocn() == 'uk' ? $settings->uk_shipping : $settings->os_shipping;
+        return $rate;
+    }
+
+
+    /**
+     * Get the free shipping rate trigger amount. currently just a single figure
+     *
+     * @return string
+     */
+    private function getFreeShipping()
+    {
+        $settings = ShopSettings::find(1);
+        return $settings->free_shipping;
     }
 
     /**
@@ -226,6 +286,23 @@ class Cart
         return $content->sum('qty');
     }
 
+
+    /**
+     * Get the desc of items in the cart.
+     *
+     * @return int|float
+     */
+    public function description()
+    {
+        $content = $this->getContent();
+
+        $desc = $content->reduce(function ($desc, CartItem $cartItem) {
+            return $desc .': '. $cartItem->qty . 'x ' . $cartItem->name;
+        }, 'Your Order');
+
+        return $desc;
+    }
+
     /**
      * Get the total price of the items in the cart.
      *
@@ -237,11 +314,31 @@ class Cart
     public function total($decimals = null, $decimalPoint = null, $thousandSeperator = null)
     {
         $content = $this->getContent();
+        $shipping = $this->totalShipping();
 
         $total = $content->reduce(function ($total, CartItem $cartItem) {
             return $total + ($cartItem->qty * $cartItem->priceTax);
         }, 0);
+        $total += $shipping;
+        return $this->numberFormat($total, $decimals, $decimalPoint, $thousandSeperator);
+    }
 
+
+    /**
+     * Get the total price of the items in the cart LESS shipping but INC tax.
+     *
+     * @param int    $decimals
+     * @param string $decimalPoint
+     * @param string $thousandSeperator
+     * @return string
+     */
+    public function totalLessShipping($decimals = null, $decimalPoint = null, $thousandSeperator = null)
+    {
+        $content = $this->getContent();
+
+        $total = $content->reduce(function ($total, CartItem $cartItem) {
+            return $total + ($cartItem->qty * $cartItem->priceTax);
+        }, 0);
         return $this->numberFormat($total, $decimals, $decimalPoint, $thousandSeperator);
     }
 
@@ -263,6 +360,34 @@ class Cart
 
         return $this->numberFormat($tax, $decimals, $decimalPoint, $thousandSeperator);
     }
+
+
+    /**
+     * Get the total shipping of the items in the cart.
+     *
+     * @param int    $decimals
+     * @param string $decimalPoint
+     * @param string $thousandSeperator
+     * @return float
+     */
+    public function totalShipping($decimals = null, $decimalPoint = null, $thousandSeperator = null)
+    {
+        $content = $this->getContent();
+
+        $shipping = $content->reduce(function ($shipping, CartItem $cartItem) {
+            return $shipping + ($cartItem->shippingTotal);
+        }, 0);
+
+        $max = $this->getMaxShipping();
+        $free = $this->getFreeShipping();
+        $totalLessShipping = $this->totalLessShipping();
+
+        $shipping = $shipping > $max ? $max : $shipping;
+        $shipping = $totalLessShipping > $free ? 0 : $shipping;
+
+        return $this->numberFormat($shipping, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
 
     /**
      * Get the subtotal (total - tax) of the items in the cart.
@@ -338,6 +463,26 @@ class Cart
         $content->put($cartItem->rowId, $cartItem);
 
         $this->session->put($this->instance, $content);
+    }
+
+
+    /**
+     * Set the shipping locn and thus rate for the cart.
+     *
+     * @param string    uk or os for now
+     * @return void
+     */
+    public function setShippingLocn($locn)
+    {
+        error_log($locn);
+        $this->setLocn($locn);
+        $shippingRate = $this->getItemShipping();
+        $content = $this->getContent();
+
+        return $content->map(function ($cartItem) use ($shippingRate) {
+            return $cartItem->setShippingRate($shippingRate);
+        });
+
     }
 
     /**
@@ -420,6 +565,14 @@ class Cart
             return $this->subtotal();
         }
 
+        if($attribute === 'totalShipping') {
+            return $this->totalShipping();
+        }
+
+        if($attribute === 'getLocn') {
+            return $this->getLocn();
+        }
+
         return null;
     }
 
@@ -462,6 +615,10 @@ class Cart
         }
 
         $cartItem->setTaxRate(config('cart.tax'));
+        $shippingRate = $this->getItemShipping();
+
+        $cartItem->setShippingRate($shippingRate);
+        //$this->setShippingLocn($this->getLocn());
 
         return $cartItem;
     }

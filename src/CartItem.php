@@ -64,6 +64,14 @@ class CartItem implements Arrayable, Jsonable
      */
     private $taxRate = 0;
 
+
+    /**
+     * The shipping for the cart item.
+     *
+     * @var int|float
+     */
+    private $shippingRate = 0;
+
     /**
      * CartItem constructor.
      *
@@ -157,6 +165,20 @@ class CartItem implements Arrayable, Jsonable
     {
         return $this->numberFormat($this->tax, $decimals, $decimalPoint, $thousandSeperator);
     }
+
+
+    /**
+     * Returns the formatted shipping.
+     *
+     * @param int    $decimals
+     * @param string $decimalPoint
+     * @param string $thousandSeperator
+     * @return string
+     */
+    public function shippingTotal($decimals = null, $decimalPoint = null, $thousandSeperator = null)
+    {
+        return $this->numberFormat($this->shippingTotal, $decimals, $decimalPoint, $thousandSeperator);
+    }
     
     /**
      * Returns the formatted tax.
@@ -242,6 +264,20 @@ class CartItem implements Arrayable, Jsonable
         return $this;
     }
 
+
+    /**
+     * Set the shipping rate.
+     *
+     * @param int|float $shippingRate
+     * @return \Gloudemans\Shoppingcart\CartItem
+     */
+    public function setShippingRate($shippingRate)
+    {
+        $this->shippingRate = $shippingRate;
+        
+        return $this;
+    }
+
     /**
      * Get an attribute from the cart item or get the associated model.
      *
@@ -257,6 +293,11 @@ class CartItem implements Arrayable, Jsonable
         if($attribute === 'priceTax') {
             return $this->price + $this->tax;
         }
+
+
+        if($attribute === 'priceShipping') {
+            return $this->price + $this->shippingRate;
+        }
         
         if($attribute === 'subtotal') {
             return $this->qty * $this->price;
@@ -268,6 +309,15 @@ class CartItem implements Arrayable, Jsonable
 
         if($attribute === 'tax') {
             return $this->price * ($this->taxRate / 100);
+        }
+
+        if($attribute === 'shippingRate') {
+            return $this->shippingRate;
+        }
+
+
+        if($attribute === 'shippingTotal') {
+            return $this->shippingRate * $this->qty;
         }
         
         if($attribute === 'taxTotal') {
