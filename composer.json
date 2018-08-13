@@ -9,15 +9,6 @@
             "email": "info@robgloudemans.nl"
         }
     ],
-    "require": {
-        "illuminate/support": "5.1.*|5.2.*|5.3.*|5.4.*|5.5.*",
-        "illuminate/session": "5.1.*|5.2.*|5.3.*|5.4.*|5.5.*",
-        "illuminate/events": "5.1.*|5.2.*|5.3.*|5.4.*|5.5.*"
-    },
-    "require-dev": {
-        "phpunit/phpunit": "~5.0|~6.0|~7.0",
-        "mockery/mockery": "~0.9.0"
-    },
     "autoload": {
         "psr-4": {
             "Gloudemans\\Shoppingcart\\": "src/"
