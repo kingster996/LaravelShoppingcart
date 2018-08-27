@@ -78,14 +78,14 @@ class CartItem implements Arrayable, Jsonable
      *
      * @var int|float
      */
-    private $uk_shipping = 0;
+    public $uk_shipping = 0;
 
     /**
      * The overseas shipping rate for the cart item.
      *
      * @var int|float
      */
-    private $os_shipping = 0;
+    public $os_shipping = 0;
 
     /**
      * CartItem constructor.
@@ -95,7 +95,7 @@ class CartItem implements Arrayable, Jsonable
      * @param float      $price
      * @param array      $options
      */
-    public function __construct($id, $name, $price, array $options = [])
+    public function __construct($id, $name, $price, $uk_shipping, $os_shipping, array $options = [])
     {
         if(empty($id)) {
             throw new \InvalidArgumentException('Please supply a valid identifier.');
@@ -426,9 +426,9 @@ class CartItem implements Arrayable, Jsonable
      * @param array      $options
      * @return \Gloudemans\Shoppingcart\CartItem
      */
-    public static function fromAttributes($id, $name, $price, array $options = [])
+    public static function fromAttributes($id, $name, $price, $uk_shipping, $os_shipping, array $options = [])
     {
-        return new self($id, $name, $price, $options);
+        return new self($id, $name, $price, $uk_shipping, $os_shipping, $options);
     }
 
     /**
@@ -453,14 +453,16 @@ class CartItem implements Arrayable, Jsonable
     public function toArray()
     {
         return [
-            'rowId'    => $this->rowId,
-            'id'       => $this->id,
-            'name'     => $this->name,
-            'qty'      => $this->qty,
-            'price'    => $this->price,
-            'options'  => $this->options->toArray(),
-            'tax'      => $this->tax,
-            'subtotal' => $this->subtotal
+            'rowId'         => $this->rowId,
+            'id'            => $this->id,
+            'name'          => $this->name,
+            'qty'           => $this->qty,
+            'price'         => $this->price,
+            'uk_shipping'   => $this->uk_shipping,
+            'os_shipping'   => $this->os_shipping,
+            'options'       => $this->options->toArray(),
+            'tax'           => $this->tax,
+            'subtotal'      => $this->subtotal
         ];
     }
 
