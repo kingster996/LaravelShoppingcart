@@ -72,6 +72,21 @@ class CartItem implements Arrayable, Jsonable
      */
     private $shippingRate = 0;
 
+
+    /**
+     * The UK shipping rate for the cart item.
+     *
+     * @var int|float
+     */
+    private $uk_shipping = 0;
+
+    /**
+     * The overseas shipping rate for the cart item.
+     *
+     * @var int|float
+     */
+    private $os_shipping = 0;
+
     /**
      * CartItem constructor.
      *
@@ -91,10 +106,18 @@ class CartItem implements Arrayable, Jsonable
         if(strlen($price) < 0 || ! is_numeric($price)) {
             throw new \InvalidArgumentException('Please supply a valid price.');
         }
+        if(strlen($uk_shipping) < 0 || ! is_numeric($uk_shipping)) {
+            throw new \InvalidArgumentException('Please supply a valid uk shipping cost.');
+        
+        if(strlen($os_shipping) < 0 || ! is_numeric($os_shipping)) {
+            throw new \InvalidArgumentException('Please supply a valid overseas shipping cost.');
+        }
 
-        $this->id       = $id;
-        $this->name     = $name;
-        $this->price    = floatval($price);
+        $this->id           = $id;
+        $this->name         = $name;
+        $this->price        = floatval($price);
+        $this->uk_shipping  = floatval($uk_shipping);
+        $this->os_shipping  = floatval($os_shipping);
         $this->options  = new CartItemOptions($options);
         $this->rowId = $this->generateRowId($id, $options);
     }
@@ -110,6 +133,34 @@ class CartItem implements Arrayable, Jsonable
     public function price($decimals = null, $decimalPoint = null, $thousandSeperator = null)
     {
         return $this->numberFormat($this->price, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+
+    /**
+     * Returns the formatted UK Shipping.
+     *
+     * @param int    $decimals
+     * @param string $decimalPoint
+     * @param string $thousandSeperator
+     * @return string
+     */
+    public function uk_shipping($decimals = null, $decimalPoint = null, $thousandSeperator = null)
+    {
+        return $this->numberFormat($this->uk_shipping, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+
+    /**
+     * Returns the formatted OS Shipping.
+     *
+     * @param int    $decimals
+     * @param string $decimalPoint
+     * @param string $thousandSeperator
+     * @return string
+     */
+    public function os_shipping($decimals = null, $decimalPoint = null, $thousandSeperator = null)
+    {
+        return $this->numberFormat($this->os_shipping, $decimals, $decimalPoint, $thousandSeperator);
     }
     
     /**
@@ -214,10 +265,10 @@ class CartItem implements Arrayable, Jsonable
      */
     public function updateFromBuyable(Buyable $item)
     {
-        $this->id       = $item->getBuyableIdentifier($this->options);
-        $this->name     = $item->getBuyableDescription($this->options);
-        $this->price    = $item->getBuyablePrice($this->options);
-        $this->priceTax = $this->price + $this->tax;
+        $this->id           = $item->getBuyableIdentifier($this->options);
+        $this->name         = $item->getBuyableDescription($this->options);
+        $this->price        = $item->getBuyablePrice($this->options);
+        $this->priceTax     = $this->price + $this->tax;
     }
 
     /**
@@ -228,12 +279,14 @@ class CartItem implements Arrayable, Jsonable
      */
     public function updateFromArray(array $attributes)
     {
-        $this->id       = array_get($attributes, 'id', $this->id);
-        $this->qty      = array_get($attributes, 'qty', $this->qty);
-        $this->name     = array_get($attributes, 'name', $this->name);
-        $this->price    = array_get($attributes, 'price', $this->price);
-        $this->priceTax = $this->price + $this->tax;
-        $this->options  = new CartItemOptions(array_get($attributes, 'options', $this->options));
+        $this->id           = array_get($attributes, 'id', $this->id);
+        $this->qty          = array_get($attributes, 'qty', $this->qty);
+        $this->name         = array_get($attributes, 'name', $this->name);
+        $this->price        = array_get($attributes, 'price', $this->price);
+        $this->uk_shipping  = array_get($attributes, 'uk_shipping', $this->uk_shipping);
+        $this->os_shipping  = array_get($attributes, 'os_shipping', $this->os_shipping);
+        $this->priceTax     = $this->price + $this->tax;
+        $this->options      = new CartItemOptions(array_get($attributes, 'options', $this->options));
 
         $this->rowId = $this->generateRowId($this->id, $this->options->all());
     }
@@ -313,6 +366,14 @@ class CartItem implements Arrayable, Jsonable
 
         if($attribute === 'shippingRate') {
             return $this->shippingRate;
+        }
+
+        if($attribute === 'uk_shipping') {
+            return $this->uk_shipping;
+        }
+
+        if($attribute === 'os_shipping') {
+            return $this->os_shipping;
         }
 
 

@@ -119,8 +119,7 @@ class Cart
      */
     private function getItemShipping()
     {
-        $settings = ShopSettings::find(1);
-        $rate = $this->getLocn() == 'uk' ? $settings->uk_shipping : $settings->os_shipping;
+        $rate = $this->getLocn() == 'uk' ? $this->uk_shipping : $this->os_shipping;
         return $rate;
     }
 
