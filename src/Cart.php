@@ -110,18 +110,6 @@ class Cart
     }
 
 
-    /**
-     * Get the per-item shipping rate for a given location. For now it's the same as max, but could be less
-     * If it's less, the cart adds them up until the total hits max
-     * per-item shipping could therefore be set as a global figure in settings table or as a true per-item in product table
-     *
-     * @return string
-     */
-    private function getItemShipping()
-    {
-        $rate = $this->getLocn() == 'uk' ? $this->uk_shipping : $this->os_shipping;
-        return $rate;
-    }
 
 
     /**
@@ -145,7 +133,7 @@ class Cart
      * @param array     $options
      * @return \Gloudemans\Shoppingcart\CartItem
      */
-    public function add($id, $name = null, $qty = null, $price = null, array $options = [])
+    public function add($id, $name = null, $qty = null, $price = null, $uk_shipping = null, $os_shipping = null, array $options = [])
     {
         if ($this->isMulti($id)) {
             return array_map(function ($item) {
@@ -153,7 +141,7 @@ class Cart
             }, $id);
         }
 
-        $cartItem = $this->createCartItem($id, $name, $qty, $price, $options);
+        $cartItem = $this->createCartItem($id, $name, $qty, $price, $uk_shipping, $os_shipping, $options);
 
         $content = $this->getContent();
 
@@ -473,15 +461,12 @@ class Cart
      */
     public function setShippingLocn($locn)
     {
-        error_log($locn);
         $this->setLocn($locn);
-        $shippingRate = $this->getItemShipping();
         $content = $this->getContent();
 
-        return $content->map(function ($cartItem) use ($shippingRate) {
-            return $cartItem->setShippingRate($shippingRate);
+        return $content->map(function ($cartItem) use ($locn) {
+            return $cartItem->setShippingRate($locn);
         });
-
     }
 
     /**
@@ -599,7 +584,7 @@ class Cart
      * @param array     $options
      * @return \Gloudemans\Shoppingcart\CartItem
      */
-    private function createCartItem($id, $name, $qty, $price, array $options)
+    private function createCartItem($id, $name, $qty, $price, $uk_shipping, $os_shipping, array $options)
     {
         if ($id instanceof Buyable) {
             $cartItem = CartItem::fromBuyable($id, $qty ?: []);
@@ -609,14 +594,12 @@ class Cart
             $cartItem = CartItem::fromArray($id);
             $cartItem->setQuantity($id['qty']);
         } else {
-            $cartItem = CartItem::fromAttributes($id, $name, $price, $options);
+            $cartItem = CartItem::fromAttributes($id, $name, $price, $uk_shipping, $os_shipping, $options);
             $cartItem->setQuantity($qty);
         }
 
         $cartItem->setTaxRate(config('cart.tax'));
-        $shippingRate = $this->getItemShipping();
-
-        $cartItem->setShippingRate($shippingRate);
+        $cartItem->setShippingRate($this->getLocn());
         //$this->setShippingLocn($this->getLocn());
 
         return $cartItem;

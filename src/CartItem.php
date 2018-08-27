@@ -108,6 +108,7 @@ class CartItem implements Arrayable, Jsonable
         }
         if(strlen($uk_shipping) < 0 || ! is_numeric($uk_shipping)) {
             throw new \InvalidArgumentException('Please supply a valid uk shipping cost.');
+        }
         
         if(strlen($os_shipping) < 0 || ! is_numeric($os_shipping)) {
             throw new \InvalidArgumentException('Please supply a valid overseas shipping cost.');
@@ -318,18 +319,35 @@ class CartItem implements Arrayable, Jsonable
     }
 
 
+
+  
+
     /**
      * Set the shipping rate.
      *
      * @param int|float $shippingRate
      * @return \Gloudemans\Shoppingcart\CartItem
      */
-    public function setShippingRate($shippingRate)
+    public function setShippingRate($locn)
     {
-        $this->shippingRate = $shippingRate;
+        //$this->shippingRate = $shippingRate;
+        $this->shippingRate = $locn == 'uk' ? $this->uk_shipping : $this->os_shipping;
         
         return $this;
     }
+
+    /**
+     * Get the per-item shipping rate for a given location. For now it's the same as max, but could be less
+     * If it's less, the cart adds them up until the total hits max
+     * per-item shipping could therefore be set as a global figure in settings table or as a true per-item in product table
+     *
+     * @return string
+     */
+    // private function getItemShipping()
+    // {
+    //     $rate = $this->getLocn() == 'uk' ? $this->uk_shipping : $this->os_shipping;
+    //     return $rate;
+    // }
 
     /**
      * Get an attribute from the cart item or get the associated model.
@@ -414,7 +432,7 @@ class CartItem implements Arrayable, Jsonable
     {
         $options = array_get($attributes, 'options', []);
 
-        return new self($attributes['id'], $attributes['name'], $attributes['price'], $options);
+        return new self($attributes['id'], $attributes['name'], $attributes['price'],$attributes['uk_shipping'], $attributes['os_shipping'],  $options);
     }
 
     /**
