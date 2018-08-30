@@ -110,6 +110,19 @@ class Cart
     }
 
 
+    /**
+     * Get the min shipping rate.
+     *
+     * @return string
+     */
+    private function getMinShipping()
+    {
+        $settings = ShopSettings::find(1);
+        $min = $settings->min_shipping;
+        return $min;
+    }
+
+
 
 
     /**
@@ -366,9 +379,11 @@ class Cart
         }, 0);
 
         $max = $this->getMaxShipping();
+        $min = $this->getMinShipping();
         $free = $this->getFreeShipping();
         $totalLessShipping = $this->totalLessShipping();
 
+        $shipping = $shipping < $min ? $min : $shipping;
         $shipping = $shipping > $max ? $max : $shipping;
         $shipping = $totalLessShipping > $free ? 0 : $shipping;
 
