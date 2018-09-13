@@ -123,6 +123,16 @@ class Cart
     }
 
 
+    /**
+     * Get the shipping calc method.
+     *
+     * @return string
+     */
+    private function getShippingCalcMethod()
+    {
+        $settings = ShopSettings::find(1);
+        return $settings->shipping_calc_method;
+    }
 
 
     /**
@@ -382,6 +392,35 @@ class Cart
         $min = $this->getMinShipping();
         $free = $this->getFreeShipping();
         $totalLessShipping = $this->totalLessShipping();
+        $calcMethod = $this->getShippingCalcMethod();
+        if($calcMethod !== 'item'){
+            switch (true) {
+    
+                case $totalLessShipping < 10:
+                    $shipping = 3;
+                    break;
+    
+                case $totalLessShipping < 20:
+                    $shipping = 4;
+                    break;
+    
+                case $totalLessShipping < 30:
+                    $shipping = 5;
+                    break;
+    
+                case $totalLessShipping < 50:
+                    $shipping = 7;
+                    break;
+    
+                case $totalLessShipping >= 50:
+                    $shipping = 10;
+                    break;
+                
+                default:
+                    $shipping = 10;
+                    break;
+            }
+        }
 
         $shipping = $shipping < $min ? $min : $shipping;
         $shipping = $shipping > $max ? $max : $shipping;

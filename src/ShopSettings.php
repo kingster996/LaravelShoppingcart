@@ -8,7 +8,7 @@ class ShopSettings extends Model
 {
     // Shop Settings - specific to WorldPay setup for now
     protected $table = "shop_settings";
-    protected $fillable = array('instId', 'cartId', 'currency', 'mail_recipient', 'mail_subject','uk_shipping','os_shipping');      
+    protected $fillable = array('instId', 'cartId', 'currency','min_shipping','free_shipping','shipping_calc_method', 'mail_recipient', 'mail_subject','uk_shipping','os_shipping');      
 
 }
             
