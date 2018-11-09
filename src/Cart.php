@@ -393,6 +393,7 @@ class Cart
         $free = $this->getFreeShipping();
         $totalLessShipping = $this->totalLessShipping();
         $calcMethod = $this->getShippingCalcMethod();
+
         if($calcMethod !== 'item'){
             switch (true) {
     
@@ -400,24 +401,16 @@ class Cart
                     $shipping = 3;
                     break;
     
-                case $totalLessShipping < 20:
+                case $totalLessShipping < 52:
                     $shipping = 4;
                     break;
     
-                case $totalLessShipping < 30:
-                    $shipping = 5;
-                    break;
-    
-                case $totalLessShipping < 50:
-                    $shipping = 7;
-                    break;
-    
                 case $totalLessShipping >= 50:
-                    $shipping = 10;
+                    $shipping = 0;
                     break;
                 
                 default:
-                    $shipping = 10;
+                    $shipping = 3;
                     break;
             }
         }
